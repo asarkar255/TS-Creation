@@ -2,3 +2,4 @@ fastapi
 openai
 python-docx
 uvicorn
+python-multipart
