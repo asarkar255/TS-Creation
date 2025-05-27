@@ -21,6 +21,8 @@ def extract_flowchart_text(ts_text: str) -> str:
     return ""
 
 def create_docx(ts_text: str, buffer):
+
+    section_header_pattern = re.compile(r"^\s*\d{1,2}\.\s*.+")
     doc = Document()
     doc.add_heading('Technical Specification', level=1)
 
@@ -28,9 +30,8 @@ def create_docx(ts_text: str, buffer):
     current_content = []
 
     lines = ts_text.splitlines()
-    for i, line in enumerate(lines):
-        # Detect numbered section headers like "1. Title"
-        if line.strip().startswith(tuple(f"{j}." for j in range(1, 20))):
+    for line in lines:
+        if section_header_pattern.match(line):
             if current_section and current_content:
                 add_heading(doc, current_section)
                 add_content(doc, '\n'.join(current_content))
@@ -39,7 +40,7 @@ def create_docx(ts_text: str, buffer):
         else:
             current_content.append(line)
 
-    # Add the last section if any
+    # Add last section
     if current_section and current_content:
         add_heading(doc, current_section)
         add_content(doc, '\n'.join(current_content))
