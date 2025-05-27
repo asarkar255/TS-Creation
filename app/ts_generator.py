@@ -48,7 +48,7 @@ Technical Specification:
     prompt = prompt_template.format_messages(abap_code=abap_code)
 
     llm = ChatOpenAI(model="gpt-4", temperature=0.3)
-    response = llm(prompt)
+    response = llm.invoke(prompt)
 
     return response.content
 
