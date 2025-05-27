@@ -21,35 +21,45 @@ def extract_flowchart_text(ts_text: str) -> str:
     return ""
 
 def create_docx(ts_text: str, buffer):
-
-    # section_header_pattern = re.compile(r"^\s*\d{1,2}\.\s*.+")
     doc = Document()
     doc.add_heading('Technical Specification', level=1)
+
+    lines = ts_text.splitlines()
+    section_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.*?):\s*(.+)$")  # Matches "1. Title: Content"
+    plain_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.+)$")            # Matches "1. Title"
 
     current_section = ""
     current_content = []
 
-    lines = ts_text.splitlines()
     for line in lines:
-        # if section_header_pattern.match(line):
+        line = line.strip()
+        if not line:
+            continue
+
+        header_with_content = section_header_pattern.match(line)
+        plain_header = plain_header_pattern.match(line)
+
+        if header_with_content:
+            # Write previous section if exists
             if current_section and current_content:
                 add_heading(doc, current_section)
                 add_content(doc, '\n'.join(current_content))
-            current_section = line.strip()
+            # Split header and content
+            current_section = f"{header_with_content.group(1)}. {header_with_content.group(2)}"
+            current_content = [header_with_content.group(3)]
+        elif plain_header:
+            # Write previous section if exists
+            if current_section and current_content:
+                add_heading(doc, current_section)
+                add_content(doc, '\n'.join(current_content))
+            current_section = f"{plain_header.group(1)}. {plain_header.group(2)}"
             current_content = []
-        # else:
+        else:
             current_content.append(line)
 
-    # Add last section
+    # Final flush
     if current_section and current_content:
         add_heading(doc, current_section)
         add_content(doc, '\n'.join(current_content))
-
-    # Append Flowchart as raw text
-    flowchart_text = extract_flowchart_text(ts_text)
-    if flowchart_text:
-        doc.add_page_break()
-        add_heading(doc, "Flowchart (Visual)")
-        add_content(doc, flowchart_text)
 
     doc.save(buffer)
