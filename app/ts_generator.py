@@ -11,6 +11,7 @@ os.environ["OPENAI_API_KEY"]=os.getenv("OPENAI_API_KEY")
 def generate_ts_from_abap(abap_code: str) -> str:
     prompt_template = ChatPromptTemplate.from_template("""
 You are a Technical Architect specializing in SAP ABAP. When generating a Technical Specification (TS) for ABAP code, ensure the following structure is followed:
+- Formatting shoud be docx compatible.
 - Remember Titles should be Bold and in uppercase.
 - Use bullet points for lists.
 -                         
