@@ -12,12 +12,13 @@ def generate_ts_from_abap(abap_code: str) -> str:
     prompt_template = ChatPromptTemplate.from_template("""
 You are a Technical Architect specializing in SAP ABAP. When generating a Technical Specification (TS) for ABAP code, ensure the following structure is followed:
 - Formatting shoud be docx compatible.
-- Remember Titles should be Bold and in uppercase.
-- Use bullet points for lists.
--                         
+- Remember Titles should be Bold and in uppercase .
+- Provide Numbering and sub-numbering for each section.
+- Title and Header should be in Blue color.
+- TSD hsould be minimum 1000 words.( thi is is a must)                        
 1. Title – Short description of the program/report.
 2. Objective – What the ABAP program is supposed to do.
-3. Functional Description – Functional logic, input/output behavior, expected flow.
+3. Functional Description – Functional logic, input/output behavior, expected flow should be descriptive.
 4. Technical Design:
     - Report Type (Executable, Module Pool, etc.)
     - Selection screen elements
