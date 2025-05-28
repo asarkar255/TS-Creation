@@ -13,7 +13,7 @@ os.environ["LANGCHAIN_TRACING_V2"]="true"
 os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")
 os.environ["OPENAI_API_KEY"]=os.getenv("OPENAI_API_KEY")
 # Load your RAG knowledge base from a text file
-rag_file_path = "rag_knowledge_base.txt"
+rag_file_path = os.path.join(os.path.dirname(__file__), "rag_knowledge_base.txt")
 loader = TextLoader(rag_file_path)
 documents = loader.load()
 
