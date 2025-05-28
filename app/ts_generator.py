@@ -39,10 +39,11 @@ def generate_ts_from_abap(abap_code: str) -> str:
     # Combine the retrieved context with the ABAP code for the prompt
     prompt_input = f"{retrieved_context}\n\nABAP Code:\n{abap_code}"
 
-    prompt = ChatPromptTemplate.format_messages(abap_code=prompt_input)
+    prompt_template = ChatPromptTemplate.from_template("Given the following context and ABAP code, generate the corresponding TypeScript code.\n\nContext:\n{context}\n\nABAP Code:\n{abap_code}")
+    messages = prompt_template.format_messages(context=retrieved_context, abap_code=abap_code)
 
     llm = ChatOpenAI(model="gpt-4", temperature=0.3)
-    response = llm.invoke(prompt)
+    response = llm.invoke(messages)
 
     return response.content
 
