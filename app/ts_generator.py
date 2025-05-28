@@ -35,7 +35,8 @@ qa_chain = RetrievalQA.from_chain_type(
 def generate_ts_from_abap(abap_code: str) -> str:
     # Retrieve relevant context from the RAG knowledge base
     retrieved_context = qa_chain.run(abap_code)
-
+    # Optionally, you can use prompt_input for logging or debugging
+    # print("Prompt Input:\n", prompt_input)
     # Combine the retrieved context with the ABAP code for the prompt
     prompt_input = f"{retrieved_context}\n\nABAP Code:\n{abap_code}"
 
@@ -45,6 +46,7 @@ def generate_ts_from_abap(abap_code: str) -> str:
     llm = ChatOpenAI(model="gpt-4", temperature=0.3)
     response = llm.invoke(messages)
 
-    return response.content
+    # Extract the content from the response message
+    return response.content if hasattr(response, "content") else str(response)
 
 
