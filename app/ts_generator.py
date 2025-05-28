@@ -33,20 +33,25 @@ qa_chain = RetrievalQA.from_chain_type(
     retriever=retriever,
 )
 def generate_ts_from_abap(abap_code: str) -> str:
-    # Retrieve relevant context from the RAG knowledge base
-    retrieved_context = qa_chain.run(abap_code)
-    # Optionally, you can use prompt_input for logging or debugging
-    # print("Prompt Input:\n", prompt_input)
-    # Combine the retrieved context with the ABAP code for the prompt
-    prompt_input = f"{retrieved_context}\n\nABAP Code:\n{abap_code}"
+    # Retrieve relevant documents (just content)
+    retrieved_docs = retriever.get_relevant_documents(abap_code)
+    retrieved_context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
-    prompt_template = ChatPromptTemplate.from_template("Given the following context and ABAP code, generate the technical specification in .docx file.\n\nContext:\n{context}\n\nABAP Code:\n{abap_code}")
+    if not retrieved_context.strip():
+        return "No relevant context found in the RAG base. Please verify the ABAP code or knowledge file."
+
+    # Compose a structured prompt
+    prompt_template = ChatPromptTemplate.from_template(
+        "Given the following context and ABAP code, generate a detailed, 1000-word technical specification in professional DOCX-compatible formatting.\n\n"
+        "Context:\n{context}\n\n"
+        "ABAP Code:\n{abap_code}"
+    )
     messages = prompt_template.format_messages(context=retrieved_context, abap_code=abap_code)
 
+    # Query GPT
     llm = ChatOpenAI(model="gpt-4", temperature=0.3)
     response = llm.invoke(messages)
 
-    # Extract the content from the response message
     return response.content if hasattr(response, "content") else str(response)
 
 
