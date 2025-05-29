@@ -64,9 +64,9 @@ def create_docx(ts_text: str, buffer):
     in_table = False
     table_lines = []
 
-    section_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.*?):\s*(.+)?$")
-    plain_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.+)$")
-    subheading_pattern = re.compile(r"^\s*(\d{1,2})\.(\d+)\s*(.+?):?$")
+    # section_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.*?):\s*(.+)?$")
+    # plain_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.+)$")
+    # subheading_pattern = re.compile(r"^\s*(\d{1,2})\.(\d+)\s*(.+?):?$")
     table_line_pattern = re.compile(r"^\|(.+?)\|$")
 
     for line in lines:
@@ -96,38 +96,38 @@ def create_docx(ts_text: str, buffer):
             in_table = False
 
         # Section header with content (e.g., "1. Title: My Program")
-        match_full = section_header_pattern.match(line)
-        match_plain = plain_header_pattern.match(line)
-        match_sub = subheading_pattern.match(line)
+        # match_full = section_header_pattern.match(line)
+        # match_plain = plain_header_pattern.match(line)
+        # match_sub = subheading_pattern.match(line)
 
-        if match_full:
+        # if match_full:
             if current_section and current_content:
                 add_heading(doc, current_section)
                 for content in current_content:
                     add_paragraph(doc, content)
                 current_content = []
 
-            current_section = f"{match_full.group(1)}. {match_full.group(2)}"
-            current_content = [match_full.group(3)] if match_full.group(3) else []
+            # current_section = f"{match_full.group(1)}. {match_full.group(2)}"
+            # current_content = [match_full.group(3)] if match_full.group(3) else []
 
-        elif match_plain:
+        # elif match_plain:
             if current_section and current_content:
                 add_heading(doc, current_section)
                 for content in current_content:
                     add_paragraph(doc, content)
                 current_content = []
 
-            current_section = f"{match_plain.group(1)}. {match_plain.group(2)}"
-            current_content = []
+            # current_section = f"{match_plain.group(1)}. {match_plain.group(2)}"
+            # current_content = []
 
-        elif match_sub:
+        # elif match_sub:
             if current_content:
                 for content in current_content:
                     add_paragraph(doc, content)
                 current_content = []
 
-            subheader = f"{match_sub.group(1)}.{match_sub.group(2)} {match_sub.group(3)}"
-            add_subheading(doc, subheader)
+            # subheader = f"{match_sub.group(1)}.{match_sub.group(2)} {match_sub.group(3)}"
+            # add_subheading(doc, subheader)
 
         else:
             current_content.append(line)
