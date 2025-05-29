@@ -1,65 +1,141 @@
 from docx import Document
 from docx.shared import Pt, RGBColor
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 import re
 
 def add_heading(doc, text):
     paragraph = doc.add_paragraph()
     run = paragraph.add_run(text)
     run.bold = True
-    run.font.color.rgb = RGBColor(0, 0, 255)  # Blue
     run.underline = True
+    run.font.color.rgb = RGBColor(0, 0, 255)  # Blue
     run.font.size = Pt(14)
-    paragraph.style = 'Normal'
 
-def add_content(doc, text):
-    doc.add_paragraph(text)
+def add_subheading(doc, text):
+    paragraph = doc.add_paragraph()
+    run = paragraph.add_run(text)
+    run.bold = True
+    run.font.size = Pt(12)
 
-def extract_flowchart_text(ts_text: str) -> str:
-    flowchart_section = re.search(r"12\. Flowchart\s*(.*?)\n(?=\d{1,2}\.|\Z)", ts_text, re.DOTALL)
-    if flowchart_section:
-        return flowchart_section.group(1).strip()
-    return ""
+def add_paragraph(doc, text):
+    paragraph = doc.add_paragraph()
+    cursor = 0
+    for match in re.finditer(r"\*\*(.+?)\*\*", text):
+        start, end = match.span()
+        paragraph.add_run(text[cursor:start])
+        bold_run = paragraph.add_run(match.group(1))
+        bold_run.bold = True
+        cursor = end
+    paragraph.add_run(text[cursor:])
+
+def add_code_block(doc, code_lines):
+    para = doc.add_paragraph()
+    run = para.add_run("\n".join(code_lines))
+    run.font.name = 'Courier New'
+    run.font.size = Pt(10)
+
+def add_markdown_table(doc, lines):
+    headers = [cell.strip(" *") for cell in lines[0].split("|") if cell.strip()]
+    rows = [
+        [cell.strip() for cell in row.split("|") if cell.strip()]
+        for row in lines[2:]  # Skip header and separator
+    ]
+    table = doc.add_table(rows=1, cols=len(headers))
+    table.style = 'Table Grid'
+    hdr_cells = table.rows[0].cells
+    for i, h in enumerate(headers):
+        hdr_cells[i].text = h
+
+    for row in rows:
+        row_cells = table.add_row().cells
+        for i, cell in enumerate(row):
+            row_cells[i].text = cell
 
 def create_docx(ts_text: str, buffer):
     doc = Document()
-    doc.add_heading('Technical Specification', level=1)
+    doc.add_heading('TECHNICAL SPECIFICATION', level=1)
 
     lines = ts_text.splitlines()
-    section_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.*?):\s*(.+)$")  # Matches "1. Title: Content"
-    plain_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.+)$")            # Matches "1. Title"
-
     current_section = ""
     current_content = []
+    in_code_block = False
+    code_block_lines = []
+    in_table = False
+    table_lines = []
+
+    section_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.*?):\s*(.+)?$")
+    plain_header_pattern = re.compile(r"^\s*(\d{1,2})\.\s*(.+)$")
+    subheading_pattern = re.compile(r"^\s*(\d{1,2})\.(\d+)\s*(.+?):?$")
+    table_line_pattern = re.compile(r"^\|(.+?)\|$")
 
     for line in lines:
         line = line.strip()
         if not line:
             continue
 
-        header_with_content = section_header_pattern.match(line)
-        plain_header = plain_header_pattern.match(line)
+        # Handle code block
+        if line.startswith("```"):
+            in_code_block = not in_code_block
+            if not in_code_block:
+                add_code_block(doc, code_block_lines)
+                code_block_lines = []
+            continue
+        elif in_code_block:
+            code_block_lines.append(line)
+            continue
 
-        if header_with_content:
-            # Write previous section if exists
+        # Handle markdown table
+        if table_line_pattern.match(line):
+            table_lines.append(line)
+            in_table = True
+            continue
+        elif in_table:
+            add_markdown_table(doc, table_lines)
+            table_lines = []
+            in_table = False
+
+        # Section header with content (e.g., "1. Title: My Program")
+        match_full = section_header_pattern.match(line)
+        match_plain = plain_header_pattern.match(line)
+        match_sub = subheading_pattern.match(line)
+
+        if match_full:
             if current_section and current_content:
                 add_heading(doc, current_section)
-                add_content(doc, '\n'.join(current_content))
-            # Split header and content
-            current_section = f"{header_with_content.group(1)}. {header_with_content.group(2)}"
-            current_content = [header_with_content.group(3)]
-        elif plain_header:
-            # Write previous section if exists
+                for content in current_content:
+                    add_paragraph(doc, content)
+                current_content = []
+
+            current_section = f"{match_full.group(1)}. {match_full.group(2)}"
+            current_content = [match_full.group(3)] if match_full.group(3) else []
+
+        elif match_plain:
             if current_section and current_content:
                 add_heading(doc, current_section)
-                add_content(doc, '\n'.join(current_content))
-            current_section = f"{plain_header.group(1)}. {plain_header.group(2)}"
+                for content in current_content:
+                    add_paragraph(doc, content)
+                current_content = []
+
+            current_section = f"{match_plain.group(1)}. {match_plain.group(2)}"
             current_content = []
+
+        elif match_sub:
+            if current_content:
+                for content in current_content:
+                    add_paragraph(doc, content)
+                current_content = []
+
+            subheader = f"{match_sub.group(1)}.{match_sub.group(2)} {match_sub.group(3)}"
+            add_subheading(doc, subheader)
+
         else:
             current_content.append(line)
 
     # Final flush
     if current_section and current_content:
         add_heading(doc, current_section)
-        add_content(doc, '\n'.join(current_content))
+        for content in current_content:
+            add_paragraph(doc, content)
 
     doc.save(buffer)
