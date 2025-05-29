@@ -28,7 +28,7 @@ vectorstore = Chroma.from_documents(docs, embedding)
 # Create retriever
 retriever = vectorstore.as_retriever()
 qa_chain = RetrievalQA.from_chain_type(
-    llm=ChatOpenAI(model="gpt-4", temperature=0.3),
+    llm=ChatOpenAI(model="gpt-4o", temperature=0.3),
     chain_type="stuff",
     retriever=retriever,
 )
@@ -49,7 +49,7 @@ def generate_ts_from_abap(abap_code: str) -> str:
     messages = prompt_template.format_messages(context=retrieved_context, abap_code=abap_code)
 
     # Query GPT
-    llm = ChatOpenAI(model="gpt-4", temperature=0.3)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
     response = llm.invoke(messages)
 
     return response.content if hasattr(response, "content") else str(response)
